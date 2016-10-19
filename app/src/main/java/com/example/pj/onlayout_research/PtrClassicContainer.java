@@ -6,8 +6,8 @@ import android.util.AttributeSet;
 /**
  * Created by pj on 2016/10/17.
  */
-public class PtrClassicContainer extends PtrContainer{
-    private DefaultHeaderView mHeaderView;
+public class PtrClassicContainer extends PtrContainer {
+    private MaterialHeader mHeaderView;
 
     public PtrClassicContainer(Context context) {
         this(context, null);
@@ -19,7 +19,7 @@ public class PtrClassicContainer extends PtrContainer{
     }
 
     private void initView() {
-        mHeaderView = new DefaultHeaderView(getContext());
+        mHeaderView = new MaterialHeader(getContext());
         setHeaderView(mHeaderView);
         addPtrUIHandler(mHeaderView);
     }

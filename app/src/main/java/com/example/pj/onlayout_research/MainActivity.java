@@ -10,11 +10,23 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
-
+    private PtrClassicContainer mPtrContainer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.content_main);
+        mPtrContainer= (PtrClassicContainer) findViewById(R.id.container);
+        mPtrContainer.setPtrHandler(new PtrHandler() {
+            @Override
+            public void onRefreshBegin() {
+                mPtrContainer.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPtrContainer.refreshComplete();
+                    }
+                },1000);
+            }
+        });
     }
 
 }

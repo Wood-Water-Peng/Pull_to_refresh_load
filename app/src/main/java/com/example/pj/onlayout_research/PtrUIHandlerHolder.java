@@ -47,7 +47,13 @@ public class PtrUIHandlerHolder implements PtrHeadUIHandler {
 
     @Override
     public void onUIReset() {
-
+        PtrUIHandlerHolder current = this;
+        do {
+            final PtrHeadUIHandler handler = current.getHandler();
+            if (null != handler) {
+                handler.onUIReset();
+            }
+        } while ((current = current.mNext) != null);
     }
 
     @Override
@@ -70,17 +76,35 @@ public class PtrUIHandlerHolder implements PtrHeadUIHandler {
 
     @Override
     public void onUIRefreshBegin() {
-
+        PtrUIHandlerHolder current = this;
+        do {
+            final PtrHeadUIHandler handler = current.getHandler();
+            if (null != handler) {
+                handler.onUIRefreshBegin();
+            }
+        } while ((current = current.mNext) != null);
     }
 
     @Override
     public void onUIRefreshComplete() {
-
+        PtrUIHandlerHolder current = this;
+        do {
+            final PtrHeadUIHandler handler = current.getHandler();
+            if (null != handler) {
+                handler.onUIRefreshComplete();
+            }
+        } while ((current = current.mNext) != null);
     }
 
     @Override
     public void onUIPositionChange(PtrContainer container, boolean isUnderTouch, byte status, PtrIndicator ptrIndicator) {
-
+        PtrUIHandlerHolder current = this;
+        do {
+            final PtrHeadUIHandler handler = current.getHandler();
+            if (null != handler) {
+                handler.onUIPositionChange(container, isUnderTouch, status, ptrIndicator);
+            }
+        } while ((current = current.mNext) != null);
     }
 
 

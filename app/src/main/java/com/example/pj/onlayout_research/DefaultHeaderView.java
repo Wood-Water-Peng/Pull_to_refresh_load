@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
@@ -82,8 +83,7 @@ public class DefaultHeaderView extends FrameLayout implements PtrHeadUIHandler {
 
     @Override
     public void onUIReset() {
-
-
+        resetView();
     }
 
     /**
@@ -115,6 +115,7 @@ public class DefaultHeaderView extends FrameLayout implements PtrHeadUIHandler {
     public void onUIRefreshBegin() {
         mShouldShowLastUpdate = false;
         hideRotateView();
+        mProgressBar.setVisibility(VISIBLE);
         mTitleTextView.setVisibility(VISIBLE);
         mTitleTextView.setText(R.string.cube_ptr_refreshing);
         mLastUpdateTimeUpdater.stop();
@@ -141,8 +142,28 @@ public class DefaultHeaderView extends FrameLayout implements PtrHeadUIHandler {
     }
 
     @Override
-    public void onUIPositionChange(PtrContainer container, boolean isUnderTouch, byte status,PtrIndicator ptrIndicator) {
+    public void onUIPositionChange(PtrContainer container, boolean isUnderTouch, byte status, PtrIndicator ptrIndicator) {
+        final int mOffsetToRefresh = ptrIndicator.getOffsetToRefresh();
+        final int currentPos = ptrIndicator.getCurrentPosY();
+        final int lastPos = ptrIndicator.getLastPosY();
 
+        if (currentPos < mOffsetToRefresh && lastPos >= mOffsetToRefresh) {
+            if (isUnderTouch && status == PtrContainer.PTR_STATUS_PREPARE) {
+                crossRotateLineFromBottomUnderTouch(container);
+                if (mRotateView != null) {
+                    mRotateView.clearAnimation();
+                    mRotateView.startAnimation(mReverseFlipAnimation);
+                }
+            }
+        } else if (currentPos > mOffsetToRefresh && lastPos <= mOffsetToRefresh) {
+            if (isUnderTouch && status == PtrContainer.PTR_STATUS_PREPARE) {
+                crossRotateLineFromTopUnderTouch(container);
+                if (mRotateView != null) {
+                    mRotateView.clearAnimation();
+                    mRotateView.startAnimation(mFlipAnimation);
+                }
+            }
+        }
     }
 
 
@@ -226,4 +247,25 @@ public class DefaultHeaderView extends FrameLayout implements PtrHeadUIHandler {
         return sb.toString();
     }
 
+    private void crossRotateLineFromTopUnderTouch(PtrContainer frame) {
+        if (!frame.isPullToRefresh()) {
+            mTitleTextView.setVisibility(VISIBLE);
+            mTitleTextView.setText(R.string.cube_ptr_release_to_refresh);
+        }
+    }
+
+    private void crossRotateLineFromBottomUnderTouch(PtrContainer frame) {
+        mTitleTextView.setVisibility(VISIBLE);
+        if (frame.isPullToRefresh()) {
+            mTitleTextView.setText(getResources().getString(R.string.cube_ptr_pull_down_to_refresh));
+        } else {
+            mTitleTextView.setText(getResources().getString(R.string.cube_ptr_pull_down));
+        }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        Log.i(TAG, "ev:" + ev.getAction());
+        return super.dispatchTouchEvent(ev);
+    }
 }

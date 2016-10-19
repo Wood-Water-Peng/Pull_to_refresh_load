@@ -30,6 +30,9 @@ public class PtrContainer extends ViewGroup {
     private boolean mPullToRefresh;
     private PtrUIHandlerHolder mPtrUIHandlerHolder = PtrUIHandlerHolder.create();
     private PtrHandler mPtrHandler;
+    private float mRatioOfHeaderHeightToRefresh;
+    private ScrollHelper mScrollHelper;
+    private PtrUIHandlerHook mRefreshCompleteHook;
 
     public PtrContainer(Context context) {
         this(context, null);
@@ -39,6 +42,8 @@ public class PtrContainer extends ViewGroup {
         super(context, attrs);
         final ViewConfiguration conf = ViewConfiguration.get(getContext());
         mPagingTouchSlop = conf.getScaledTouchSlop() * 2;
+        mPtrIndicator.setRatioOfHeaderHeightToRefresh(1.5f);
+        mScrollHelper = new ScrollHelper();
         Log.i(TAG, "mPagingTouchSlop:" + mPagingTouchSlop);
     }
 
@@ -52,26 +57,51 @@ public class PtrContainer extends ViewGroup {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent e) {
-//        Log.i(TAG, "------ev------:" + ev.getAction());
+//        Log.i(TAG, "------e------:" + e.getAction());
         switch (e.getAction()) {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 mPtrIndicator.onRelease();
                 if (mPtrIndicator.hasLeftStartPosition()) {
                     onRelease(false);
+                    if (mPtrIndicator.hasMovedAfterPressedDown()) {
+                        /**
+                         * 不管是否下拉到刷新的距离
+                         * 都认为刷新事件取消,直接回滚到顶部
+                         */
+                        sendCancelEvent();  //取消刷新事件
+                        return true;
+                    }
                 }
+                break;
             case MotionEvent.ACTION_DOWN:
                 mPtrIndicator.onPressDown(e.getX(), e.getY());
-                break;
+                dispatchTouchEventSupper(e);
+                return true;     //对于有些控件，可能不会消费DOWN事件，所以这里直接返回true，才能接收到后续的MOVE事件
             case MotionEvent.ACTION_MOVE:
                 mLastMoveEvent = e;
                 mPtrIndicator.onMove(e.getX(), e.getY());
                 float offsetY = mPtrIndicator.getOffsetY();
-                movePos(offsetY);
-                break;
-        }
+                /**
+                 * 头部在初始位置时上滑，将事件交由默认的逻辑处理
+                 */
+                boolean moveDown = offsetY > 0;  //判断用户是上拉还是下拉
+                boolean moveUp = !moveDown;
+                boolean canMoveUp = mPtrIndicator.hasLeftStartPosition(); //判断头部是否可以上滑
+                if (moveDown && mContentView.canScrollVertically(-1)) {
+                    return dispatchTouchEventSupper(e);
+                }
+                if ((moveUp && canMoveUp) || moveDown) {
+                    movePos(offsetY);
+                    return dispatchTouchEventSupper(e);
+                }
 
-        return true;
+        }
+        return dispatchTouchEventSupper(e);
+    }
+
+    public boolean dispatchTouchEventSupper(MotionEvent e) {
+        return super.dispatchTouchEvent(e);
     }
 
     /**
@@ -82,7 +112,39 @@ public class PtrContainer extends ViewGroup {
      * @param b
      */
     private void onRelease(boolean b) {
+        tryToPerformRefresh();
+        Log.i(TAG, "onRelease——mStatus:" + mStatus);
+        if (mStatus == PTR_STATUS_LOADING) {
+            mScrollHelper.tryToScrollTo(mPtrIndicator.getOffsetToKeepHeaderWhileLoading(), 200);
+        } else {
+            if (mStatus == PTR_STATUS_COMPLETE) {
+                notifyUIRefreshComplete(false);
+            } else {
+                tryScrollBackToTopAbortRefresh();
+            }
+        }
+    }
 
+    private void tryScrollBackToTopAbortRefresh() {
+        tryScrollBackToTop();
+    }
+
+    private void tryToPerformRefresh() {
+
+        if (mStatus != PTR_STATUS_PREPARE) {
+            return;
+        }
+
+        if (mPtrIndicator.isOverOffsetToRefresh()) {
+            Log.i(TAG, "---onRefreshBegin---");
+            mStatus = PTR_STATUS_LOADING;
+            if (mPtrUIHandlerHolder.hasHandler()) {
+                mPtrUIHandlerHolder.onUIRefreshBegin();
+            }
+            if (mPtrHandler != null) {
+                mPtrHandler.onRefreshBegin();
+            }
+        }
     }
 
     private void movePos(float deltaY) {
@@ -94,10 +156,10 @@ public class PtrContainer extends ViewGroup {
         mPtrIndicator.setCurrentPos(to);
         int change = to - mPtrIndicator.getLastPosY();
 
-        Log.i(TAG, "deltaY:" + deltaY);
-        Log.i(TAG, "lastPosY:" + mPtrIndicator.getLastPosY());
-        Log.i(TAG, "to:" + to);
-        Log.i(TAG, "change:" + change);
+//        Log.i(TAG, "deltaY:" + deltaY);
+//        Log.i(TAG, "lastPosY:" + mPtrIndicator.getLastPosY());
+//        Log.i(TAG, "to:" + to);
+//        Log.i(TAG, "change:" + change);
 
         updatePos(change);
 
@@ -115,9 +177,9 @@ public class PtrContainer extends ViewGroup {
         if (isUnderTouch && mPtrIndicator.hasMovedAfterPressedDown()) {
             sendCancelEvent();
         }
-        Log.i(TAG,"-------------------------:"+mPtrIndicator.hasJustLeftStartPosition());
-        if(mPtrIndicator.hasJustLeftStartPosition()&&mStatus==PTR_STATUS_INIT){
-            mStatus=PTR_STATUS_PREPARE;
+//        Log.i(TAG, "-------------------------:" + mPtrIndicator.hasJustLeftStartPosition());
+        if (mPtrIndicator.hasJustLeftStartPosition() && mStatus == PTR_STATUS_INIT) {
+            mStatus = PTR_STATUS_PREPARE;
             mPtrUIHandlerHolder.onUIRefreshPrepare(this);
         }
 
@@ -129,6 +191,11 @@ public class PtrContainer extends ViewGroup {
         if (mContentView != null) {
             mContentView.offsetTopAndBottom(change);
         }
+
+        if (mPtrUIHandlerHolder.hasHandler()) {
+            mPtrUIHandlerHolder.onUIPositionChange(this, isUnderTouch, mStatus, mPtrIndicator);
+        }
+
         invalidate();
     }
 
@@ -139,6 +206,63 @@ public class PtrContainer extends ViewGroup {
     public boolean isPullToRefresh() {
         return mPullToRefresh;
     }
+
+    private Runnable mPerformRefreshCompleteDelay = new Runnable() {
+        @Override
+        public void run() {
+
+            performRefreshComplete();
+        }
+    };
+
+    private void performRefreshComplete() {
+        Log.i(TAG, "---performRefreshComplete---");
+        mStatus = PTR_STATUS_COMPLETE;
+        notifyUIRefreshComplete(false);
+    }
+
+    private void notifyUIRefreshComplete(boolean b) {
+        if (mPtrUIHandlerHolder.hasHandler()) {
+            mPtrUIHandlerHolder.onUIRefreshComplete();
+        }
+        mPtrIndicator.onUIRefreshComplete();
+        tryScrollBackToTopAfterComplete();
+        tryToNotifyReset();
+    }
+
+    private void tryToNotifyReset() {
+        /**
+         * 回滚到顶部之后将状态重置
+         */
+        if ((mStatus == PTR_STATUS_COMPLETE || mStatus == PTR_STATUS_PREPARE) && mPtrIndicator.isInStartPosition()) {
+            if (mPtrUIHandlerHolder.hasHandler()) {
+                mPtrUIHandlerHolder.onUIReset();
+            }
+            mStatus = PTR_STATUS_INIT;
+        }
+
+    }
+
+    private void tryScrollBackToTopAfterComplete() {
+        tryScrollBackToTop();
+    }
+
+    private void tryScrollBackToTop() {
+        Log.i(TAG, "isUnderTouch:" + mPtrIndicator.isUnderTouch());
+
+        if (!mPtrIndicator.isUnderTouch()) {
+            mScrollHelper.tryToScrollTo(PtrIndicator.POS_START, 500);
+        }
+    }
+
+    /**
+     * 暴露给外部的接口,表示数据加载已经结束，可以进行自动回滚了
+     */
+    final public void refreshComplete() {
+        Log.i(TAG, "---refreshComplete---");
+        postDelayed(mPerformRefreshCompleteDelay, 1000);
+    }
+
 
     @Override
     protected void onFinishInflate() {
@@ -151,11 +275,11 @@ public class PtrContainer extends ViewGroup {
             Log.i(TAG, "child1:" + child1.getClass().getCanonicalName());
             Log.i(TAG, "child2:" + child2.getClass().getCanonicalName());
 
-            if (child1 instanceof DefaultHeaderView) {
+            if (child1 instanceof PtrHeadUIHandler) {
 //                Log.i(TAG, "------------------");
                 mHeaderView = child1;
                 mContentView = child2;
-            } else if (child2 instanceof DefaultHeaderView) {
+            } else if (child2 instanceof PtrHeadUIHandler) {
 //                Log.i(TAG, "===================");
                 mContentView = child1;
                 mHeaderView = child2;
@@ -249,6 +373,7 @@ public class PtrContainer extends ViewGroup {
             final int top = -(mHeaderHeight - paddingTop - lp.topMargin - offset);
             final int right = left + mHeaderView.getMeasuredWidth();
             final int bottom = top + mHeaderView.getMeasuredHeight();
+            Log.i(TAG, "header_top:" + top + "------header_bottom:" + bottom);
             mHeaderView.layout(left, top, right, bottom);
 
         }
@@ -259,8 +384,19 @@ public class PtrContainer extends ViewGroup {
             final int top = paddingTop + lp.topMargin + offset;
             final int right = left + mContentView.getMeasuredWidth();
             final int bottom = top + mContentView.getMeasuredHeight();
+            Log.i(TAG, "content_top:" + top + "------content_bottom:" + bottom);
             mContentView.layout(left, top, right, bottom);
         }
+    }
+
+    public void setRefreshCompleteHook(PtrUIHandlerHook mPtrUIHandlerHook) {
+        mRefreshCompleteHook = mPtrUIHandlerHook;
+        mPtrUIHandlerHook.setResumeAction(new Runnable() {
+            @Override
+            public void run() {
+                notifyUIRefreshComplete(true);
+            }
+        });
     }
 
     public static class LayoutParams extends MarginLayoutParams {
@@ -324,7 +460,7 @@ public class PtrContainer extends ViewGroup {
          */
         private void finish() {
             reset();
-
+            onPtrScrollFinish();
         }
 
         /**
@@ -345,10 +481,14 @@ public class PtrContainer extends ViewGroup {
             mTo = to;
 
             int distance = mTo - mStart;
-
+            Log.i(TAG, "mStart:" + mStart + "---mTo:" + mTo);
             mScroller.startScroll(0, 0, 0, distance, duration);
             post(this);
             mIsRunning = true;
         }
+    }
+
+    private void onPtrScrollFinish() {
+        onRelease(true);
     }
 }
