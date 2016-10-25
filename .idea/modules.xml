@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/OnLayout_research.iml" filepath="$PROJECT_DIR$/OnLayout_research.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/PtrResearch.iml" filepath="$PROJECT_DIR$/PtrResearch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo.iml" filepath="$PROJECT_DIR$/demo/demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ptr_lib/ptr_lib.iml" filepath="$PROJECT_DIR$/ptr_lib/ptr_lib.iml" />
     </modules>
   </component>
 </project>

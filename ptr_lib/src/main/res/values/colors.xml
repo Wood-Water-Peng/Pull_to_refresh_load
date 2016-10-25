@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <!-- 橘黄 -->
+    <color name="red2">#ff3f01</color>
+    <!-- 棕色 -->
+    <color name="brown">#a95821</color>
+    <!-- title分割线 -->
+    <color name="cyan">#23d9b2</color>
+    <color name="light_blue">#6593cb</color>
+</resources>
