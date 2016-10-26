@@ -58,4 +58,39 @@ An example:
                 }, 1000);
             }
         });
+
+## Process Load More
+
+`OnLoadListener`专门处理加载操作
+    
+      public interface OnLoadListener {
+        void onLoad();
+    }
+
+An example:
+
+        mPtrContainer.setOnLoadListener(new PtrContainer.OnLoadListener() {
+            @Override
+            public void onLoad() {
+                mPtrContainer.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        //load data
+                        mAdapter.notifyDataSetChanged();
+                        mPtrContainer.loadMoreCompleted();
+                    }
+                }, 1000);
+            }
+        });
+    
+    
+## Q&A
+* ViewPager的滑动冲突解决：
+
+## Continue
+*  给PtrContainer增加自定义属性
+*  增加自定义头部
+*  增加自定义尾部
+
+
         
