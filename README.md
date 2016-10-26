@@ -9,7 +9,7 @@ Blog:www.pengjiebest.com
 ---
 ## Pull To Refresh And Load More  
 
-该项目是对<a href="https://github.com/liaohuqiu/android-Ultra-Pull-To-Refresh">该项目</a>的再次封装
+该项目是对<a href="https://github.com/liaohuqiu/android-Ultra-Pull-To-Refresh">Ultra-Pull-To-Refresh</a>的再次封装
 添加了LoadMore模块
 
 ## Usage
@@ -18,33 +18,44 @@ Blog:www.pengjiebest.com
 
 **Config in xml**
 
-''
-    <in.srain.cube.views.ptr.PtrFrameLayout
-        android:id="@+id/store_house_ptr_frame"
-        xmlns:cube_ptr="http://schemas.android.com/apk/res-auto"
+    <com.example.pj.ptr_lib.container.PtrClassicContainer
+        android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        cube_ptr:ptr_resistance="1.7"
-        cube_ptr:ptr_ratio_of_header_height_to_refresh="1.2"
-        cube_ptr:ptr_duration_to_close="300"
-        cube_ptr:ptr_duration_to_close_header="2000"
-        cube_ptr:ptr_keep_header_when_refresh="true"
-        cube_ptr:ptr_pull_to_fresh="false" >
-        
-        <LinearLayout
-            android:id="@+id/store_house_ptr_image_content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/cube_mints_333333"
-            android:clickable="true"
-            android:padding="10dp">
-
-            <in.srain.cube.image.CubeImageView
-                android:id="@+id/store_house_ptr_image"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </LinearLayout>
-
-    </in.srain.cube.views.ptr.PtrFrameLayout>
+    >
+    <ListView
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </ListView>
+   
+    </com.example.pj.ptr_lib.container.PtrClassicContainer>
     
-''
+
+## Process Refresh
+
+`PtrHandler` 专门处理刷新操作
+
+
+    public interface PtrHandler {
+            /**
+             *该方法在刷新时被回调
+             */
+            void onRefreshBegin();
+    }
+    
+An example:  
+
+
+     mPtrContainer.setPtrHandler(new PtrHandler() {
+            @Override
+            public void onRefreshBegin() {
+                mPtrContainer.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPtrContainer.refreshComplete();
+                    }
+                }, 1000);
+            }
+        });
+        
