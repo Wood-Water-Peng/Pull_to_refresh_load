@@ -16,6 +16,9 @@ Blog:www.pengjiebest.com
 
 **添加了新的头部动画**
 
+该动画的思路解析<a href="http://www.pengjiebest.com/articles/bomb-head-analysis/">点击此处</a>
+
+
 原gif图如下：  
 ![](http://i.imgur.com/zREtq7h.gif)
 
