@@ -24,7 +24,7 @@ public class PtrClassicContainer extends PtrContainer {
     }
 
     private void initView() {
-//        mHeaderView = new DefaultHeaderView(getContext());
+//      mHeaderView = new DefaultHeaderView(getContext());
         mHeaderView = new BombHeadView(getContext());
         mHeaderView.setBackgroundColor((Color.parseColor("#9c27b0")));
         mHeaderView.initWithSpecifiedParam(6, Color.parseColor("#00bcd4"));
