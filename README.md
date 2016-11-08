@@ -14,6 +14,11 @@ Blog:www.pengjiebest.com
 
 ## Usage
 
+**添加了新的头部动画**
+
+原gif图如下：  
+![](http://i.imgur.com/zREtq7h.gif)
+
 **下拉刷新使用方法**
 
 **Config in xml**
