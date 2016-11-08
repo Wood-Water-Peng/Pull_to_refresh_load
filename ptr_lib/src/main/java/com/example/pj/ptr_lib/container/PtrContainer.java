@@ -36,12 +36,6 @@ public class PtrContainer extends ViewGroup {
     private MotionEvent mLastMoveEvent;
 
     /**
-     * optional config for define head and content in xml file
-     */
-    private int mHeadId = 0;
-    private int mContainerId = 0;
-
-    /**
      * 对于头部高度
      * 应该讲头部自身的margin和父控件的padding算进去
      * 后面计算的时候，统一以该高度为标准
@@ -54,6 +48,13 @@ public class PtrContainer extends ViewGroup {
     private ScrollHelper mScrollHelper;
     private PtrUIHandlerHook mRefreshCompleteHook;
     private ListView mListView;
+
+    /**
+     * 默认属性
+     */
+    private float ptr_resistance = 1.5f;
+    private float ptr_ratio_of_head_to_refresh = 0.5f;
+    private int ptr_duration_to_close_head = 1000;
 
     public PtrContainer(Context context) {
         this(context, null);
@@ -68,10 +69,12 @@ public class PtrContainer extends ViewGroup {
 
         TypedArray arr = context.obtainStyledAttributes(attrs, R.styleable.PtrContainer, 0, 0);
         if (arr != null) {
-
+            ptr_duration_to_close_head = arr.getInt(R.styleable.PtrContainer_ptr_duration_to_close_header, ptr_duration_to_close_head);
+            mPtrIndicator.setResistance(arr.getFloat(R.styleable.PtrContainer_ptr_resistance, ptr_resistance));
+            mPtrIndicator.setRatioOfHeaderHeightToRefresh(arr.getFloat(R.styleable.PtrContainer_ptr_ratio_of_header_height_to_refresh, ptr_ratio_of_head_to_refresh));
+            arr.recycle();
         }
         Log.i(TAG, "mPagingTouchSlop:" + mPagingTouchSlop);
-
 
     }
 
@@ -88,7 +91,7 @@ public class PtrContainer extends ViewGroup {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent e) {
-//        Log.i(TAG, "------e------:" + e.getAction());
+//      Log.i(TAG, "------e------:" + e.getAction());
         switch (e.getAction()) {
             case MotionEvent.ACTION_UP:
                 /**
@@ -388,22 +391,11 @@ public class PtrContainer extends ViewGroup {
          *
          * 2.写在xml文件中
          */
-        Log.i(TAG, "childCount:" + childCount);
-        Log.i(TAG, "mHeadId:" + mHeadId);
         if (childCount > 2) {
             throw new IllegalStateException("PtrContainer can only contain 2 children");
         }
         if (childCount == 2) {
             //找到head和content
-            if (mHeaderView == null) {
-                mHeaderView = findViewById(mHeadId);
-            }
-            if (mContentView == null) {
-                mContentView = findViewById(mContainerId);
-            }
-            /**
-             * 如果用户在xml中写入了head和content，却没有指定id
-             */
             findHeadAndContent();
         }
         if (mHeaderView != null) {

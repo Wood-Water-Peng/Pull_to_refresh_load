@@ -2,6 +2,7 @@ package com.example.pj.onlayout_research;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private PtrClassicContainer mPtrContainer;
     private ListView mListView;
     private ArrayAdapter mAdapter;
@@ -33,9 +35,11 @@ public class MainActivity extends AppCompatActivity {
 
 
         mAdapter = new ArrayAdapter<String>(this, R.layout.item);
+
         initData();
         mAdapter.addAll(data);
         mListView.setAdapter(mAdapter);
+
         mPtrContainer.setOnLoadListener(new PtrContainer.OnLoadListener() {
             @Override
             public void onLoad() {
@@ -50,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
                 }, 1000);
             }
         });
+
         mPtrContainer.setPtrHandler(new PtrHandler() {
             @Override
             public void onRefreshBegin() {
@@ -58,9 +63,18 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         mPtrContainer.refreshComplete();
                     }
-                }, 1000);
+                }, 4000);
             }
         });
+
+        mListView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "list_height:" + mListView.getMeasuredHeight());
+                Log.i(TAG, "list_top:" + mListView.getTop());
+                Log.i(TAG, "list_bottom:" + mListView.getHeight());
+            }
+        }, 1000);
     }
 
     private void initData() {
@@ -70,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
         data.add("Title_04");
         data.add("Title_05");
         data.add("Title_06");
+        data.add("Title_07");
     }
 
 }

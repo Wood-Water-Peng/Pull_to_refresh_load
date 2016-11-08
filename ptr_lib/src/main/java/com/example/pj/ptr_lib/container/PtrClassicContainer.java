@@ -1,15 +1,16 @@
 package com.example.pj.ptr_lib.container;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.AttributeSet;
 
-import com.example.pj.ptr_lib.head.DefaultHeaderView;
+import com.example.pj.ptr_lib.head.BombHeadView;
 
 /**
  * Created by pj on 2016/10/17.
  */
 public class PtrClassicContainer extends PtrContainer {
-    private DefaultHeaderView mHeaderView;
+    private BombHeadView mHeaderView;
     private Context mContext;
 
     public PtrClassicContainer(Context context) {
@@ -23,7 +24,10 @@ public class PtrClassicContainer extends PtrContainer {
     }
 
     private void initView() {
-        mHeaderView = new DefaultHeaderView(getContext());
+//        mHeaderView = new DefaultHeaderView(getContext());
+        mHeaderView = new BombHeadView(getContext());
+        mHeaderView.setBackgroundColor((Color.parseColor("#9c27b0")));
+        mHeaderView.initWithSpecifiedParam(6, Color.parseColor("#00bcd4"));
         setHeaderView(mHeaderView);
         /**
          * 这样写的问题
